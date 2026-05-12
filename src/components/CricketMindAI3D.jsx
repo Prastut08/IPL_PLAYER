@@ -4,6 +4,7 @@ import gsap from 'gsap';
 import { Canvas } from '@react-three/fiber';
 import HolographicSphere from './HolographicSphere';
 import MagneticCursor from './MagneticCursor';
+import Leaderboard from './Leaderboard';
 import '../styles/cricketmind-ai-3d.css';
 
 // 3D Hero Scene
@@ -583,79 +584,9 @@ const GamificationSection = () => {
   );
 };
 
-// Leaderboard Section with local persistence
+// Leaderboard Section connected to Firestore
 const LeaderboardSection = () => {
-  const defaultBoard = [
-    { rank: 1, name: 'PredictionGod', xp: 15420, accuracy: 94.8, badge: '👑' },
-    { rank: 2, name: 'NeuralMaster', xp: 14890, accuracy: 93.5, badge: '⭐' },
-    { rank: 3, name: 'CricketGenius', xp: 14350, accuracy: 92.1, badge: '🔥' },
-    { rank: 4, name: 'DataAnalyst', xp: 13720, accuracy: 91.7, badge: '🧠' },
-    { rank: 5, name: 'AkintorChamp', xp: 13100, accuracy: 90.3, badge: '🎯' }
-  ];
-
-  const [leaderboard, setLeaderboard] = useState(() => {
-    try {
-      const raw = localStorage.getItem('cm_leaderboard');
-      return raw ? JSON.parse(raw) : defaultBoard;
-    } catch (e) {
-      return defaultBoard;
-    }
-  });
-
-  useEffect(() => {
-    try { localStorage.setItem('cm_leaderboard', JSON.stringify(leaderboard)); } catch (e) {}
-  }, [leaderboard]);
-
-  return (
-    <section className="leaderboard" id="leaderboard">
-      <motion.div
-        className="leaderboard-header"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
-      >
-        <h2 className="section-title">Global Leaderboard</h2>
-        <p className="section-subtitle">Top predictors competing for supremacy</p>
-      </motion.div>
-
-      <motion.div
-        className="leaderboard-table"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true }}
-      >
-        {leaderboard.map((player, idx) => (
-          <motion.div
-            key={idx}
-            className="leaderboard-row"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: idx * 0.05 }}
-            viewport={{ once: true }}
-            whileHover={{ x: 10, boxShadow: '0 0 20px rgba(0, 217, 255, 0.2)' }}
-          >
-            <div className="rank-position">#{player.rank}</div>
-            <div className="player-info">
-              <span className="player-badge">{player.badge}</span>
-              <span className="player-name">{player.name}</span>
-            </div>
-            <div className="player-stats">
-              <div className="stat">
-                <span className="stat-label">XP</span>
-                <span className="stat-value">{player.xp.toLocaleString()}</span>
-              </div>
-              <div className="stat">
-                <span className="stat-label">Accuracy</span>
-                <span className="stat-value">{player.accuracy}%</span>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </motion.div>
-    </section>
-  );
+  return <Leaderboard />;
 };
 
 // Community Section
