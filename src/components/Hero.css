@@ -32,3 +32,39 @@
   .hero-title { font-size: 32px; }
   .visual-card { width: 92%; height: 260px; }
 }
+
+/* New CricketMind hero styles */
+.cm-hero { position: relative; padding: 64px 0; overflow: visible; }
+.cm-hero-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.cm-blob { position: absolute; top: -120px; left: -60px; width: 900px; height: 700px; }
+
+.cm-hero-inner { position: relative; z-index: 2; display: flex; align-items: center; gap: 28px; justify-content: space-between; }
+.cm-left { max-width: 640px; }
+.cm-badge { display:inline-block; background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius:999px; color:#cfeaff; font-weight:700; margin-bottom:14px; }
+.cm-title { font-size:48px; line-height:1.03; margin:0 0 14px; color:#e9fbff; }
+.cm-accent { background: linear-gradient(90deg,#00d9ff,#6e00ff); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:900; }
+.cm-sub { color:rgba(230,245,255,0.9); margin-bottom:20px; font-size:18px; }
+
+.cm-ctas { display:flex; gap:12px; margin-bottom:16px; }
+.cm-btn { border: none; padding: 12px 18px; border-radius: 12px; cursor: pointer; font-weight:700; }
+.cm-primary { background: linear-gradient(90deg,#00d9ff,#6e00ff); color:#001; box-shadow: 0 8px 30px rgba(14,124,255,0.12); }
+.cm-ghost { background: rgba(255,255,255,0.03); color:#dff6ff; border:1px solid rgba(255,255,255,0.06); }
+
+.cm-features { display:flex; gap:18px; list-style:none; padding:0; margin:0; color:rgba(210,230,255,0.9); }
+.cm-features li { font-size:14px; }
+
+.cm-right { width:420px; display:flex; justify-content:center; }
+.cm-visual { position: relative; width: 380px; height: 360px; border-radius: 20px; display:flex; align-items:center; justify-content:center; background: radial-gradient(ellipse at 30% 20%, rgba(0,217,255,0.06), transparent 30%), linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.08)); box-shadow: 0 16px 60px rgba(2,12,34,0.6); }
+.cm-holo { width: 240px; height: auto; transform-origin:center; }
+.cm-overlay { position:absolute; right: 10px; top: 10px; display:flex; flex-direction:column; gap:10px; }
+.cm-stat { background: rgba(255,255,255,0.03); padding:8px 12px; border-radius:10px; text-align:center; color:#dff6ff; }
+.cm-stat .v { font-weight:800; font-size:16px; }
+.cm-stat .l { font-size:11px; opacity:0.85; }
+.cm-rings { position:absolute; inset:0; border-radius:inherit; pointer-events:none; box-shadow: inset 0 0 60px rgba(110,0,255,0.03), 0 8px 40px rgba(14,124,255,0.04); }
+
+@media (max-width: 900px) {
+  .cm-hero-inner { flex-direction: column-reverse; gap: 22px; }
+  .cm-right { width:100%; }
+  .cm-title { font-size:32px; }
+  .cm-visual { width: 92%; height: 280px; }
+}
