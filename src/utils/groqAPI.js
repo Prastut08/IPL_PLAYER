@@ -8,11 +8,45 @@ const GROQ_API_URL = import.meta.env.VITE_GROQ_API_URL || "https://api.groq.com/
 const GROQ_MODEL = import.meta.env.VITE_GROQ_MODEL || "";
 const GROQ_USE_API = (import.meta.env.VITE_GROQ_USE_API || "true").toLowerCase() === "true";
 
+// Gemini / Google Generative API support (uses API key via VITE_GEMINI_API_KEY)
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+const GEMINI_URL = (key) => `https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generate?key=${key}`;
+
 /**
  * Generate 12 questions for player prediction
  */
 export const generateQuestions = async () => {
-  // If API usage is disabled or key/model missing, use fallback
+  // Prefer Gemini if API key present
+  if (GEMINI_API_KEY) {
+    try {
+      const prompt = `Generate between 10 and 12 concise multiple-choice questions (MCQs) to predict which IPL/cricket player someone is thinking of. For each question return an object with keys: id (numeric), question (short text), options (array of exactly 4 option strings). Return a JSON array only, for example: [{"id":1,"question":"...","options":["A","B","C","D"]}, ...]. Do not return any extra explanation or text.`;
+
+      const res = await fetch(GEMINI_URL(GEMINI_API_KEY), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: { text: prompt },
+          temperature: 0.7,
+          maxOutputTokens: 1200,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
+      const data = await res.json();
+      const content = data.candidates?.[0]?.content || data.output?.[0]?.content || '';
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error('Invalid Gemini response format');
+      const questions = JSON.parse(jsonMatch[0]);
+      return { success: true, questions };
+    } catch (err) {
+      console.error('Gemini generateQuestions error:', err);
+      return { success: false, error: err.message, questions: getFallbackQuestions() };
+    }
+  }
+
+  // Fallback to GROQ/OpenAI-style flow
   if (!GROQ_USE_API || !GROQ_API_KEY || !GROQ_MODEL) {
     return { success: false, error: "API disabled or not configured", questions: getFallbackQuestions() };
   }
@@ -29,10 +63,10 @@ export const generateQuestions = async () => {
         messages: [
           {
             role: "user",
-            content: `Generate exactly 12 concise yes/no/maybe questions to predict which cricket player someone is thinking of.\nReturn a JSON array of objects with {"id", "question"}. No extra text.`,
+            content: `Generate between 10 and 12 concise multiple-choice questions (MCQs) to predict which IPL/cricket player someone is thinking of. For each question return an object with keys:\n- id: numeric id\n- question: short question text\n- options: an array of exactly 4 option strings\nReturn a JSON array only, for example: [{"id":1,"question":"...","options":["A","B","C","D"]}, ...]. Do not return any extra explanation or text.`,
           },
         ],
-        max_tokens: 800,
+        max_tokens: 1200,
         temperature: 0.7,
       }),
     });
@@ -59,7 +93,37 @@ export const generateQuestions = async () => {
  * Generate player prediction based on answers
  */
 export const predictPlayer = async (answers) => {
-  // If API not configured, run local heuristic predictor
+  // If Gemini key present, use Google's Generative API
+  if (GEMINI_API_KEY) {
+    try {
+      const answersText = answers.map((a, i) => `Q${i + 1}: ${a.question}\nA: ${a.answer}`).join('\n\n');
+      const prompt = `Based on these answers about a cricket player, predict which player they are thinking of.\n\nAnswers:\n${answersText}\n\nReturn a JSON object with playerName, confidence (0-100), reasoning, alternates (array of 2). Return JSON only.`;
+
+      const res = await fetch(GEMINI_URL(GEMINI_API_KEY), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: { text: prompt }, temperature: 0.7, maxOutputTokens: 500 }),
+      });
+
+      if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
+      const data = await res.json();
+      const content = data.candidates?.[0]?.content || data.output?.[0]?.content || '';
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('Invalid Gemini prediction format');
+      const prediction = JSON.parse(jsonMatch[0]);
+      return { success: true, prediction };
+    } catch (err) {
+      console.error('Gemini predictPlayer error:', err);
+      // Fallback to local predictor when Gemini is unavailable
+      try {
+        return localPredict(answers);
+      } catch (e) {
+        return { success: false, error: err.message };
+      }
+    }
+  }
+
+  // Fallback to local/groq flow
   if (!GROQ_USE_API || !GROQ_API_KEY || !GROQ_MODEL) {
     return localPredict(answers);
   }
@@ -142,18 +206,18 @@ const localPredict = (answers) => {
  * Fallback questions if API fails
  */
 const getFallbackQuestions = () => [
-  { id: 1, question: "Is this player primarily a batsman?" },
-  { id: 2, question: "Is this player from India?" },
-  { id: 3, question: "Has this player played for their country recently (last 5 years)?" },
-  { id: 4, question: "Is this player known for opening?" },
-  { id: 5, question: "Is this player a right-handed batter?" },
-  { id: 6, question: "Has this player scored an international century?" },
-  { id: 7, question: "Is this player an all-rounder?" },
-  { id: 8, question: "Is this player primarily a fast bowler?" },
-  { id: 9, question: "Has this player played in T20 leagues like IPL?" },
-  { id: 10, question: "Is this player from the last decade (born 1990 onwards)?" },
-  { id: 11, question: "Has this player won a major tournament (World Cup, IPL)?" },
-  { id: 12, question: "Is this player still actively playing?" },
+  { id: 1, question: "What is the player's primary role?", options: ["Batsman","Bowler","All-rounder","Wicketkeeper"] },
+  { id: 2, question: "Which country is the player primarily associated with?", options: ["India","Australia","England","Other"] },
+  { id: 3, question: "Is the player known for power-hitting or finishing?", options: ["Power-hitter","Finisher","Anchor","All-round contributor"] },
+  { id: 4, question: "Which batting position best describes the player?", options: ["Opener","Top-order","Middle-order","Lower-order"] },
+  { id: 5, question: "What type of bowler describes the player (if applicable)?", options: ["Fast/Pacer","Swing/Seam","Spinner","Doesn't bowl"] },
+  { id: 6, question: "Has the player captained an IPL team?", options: ["Yes, long-term","Yes, occasionally","No, but led other teams","Never"] },
+  { id: 7, question: "Which era best fits the player?", options: ["2008-2015","2016-2020","2021-2026","Earlier eras"] },
+  { id: 8, question: "Is the player more famous for IPL/T20 or international cricket?", options: ["IPL/T20 specialist","International star","Balanced career","Mostly domestic"] },
+  { id: 9, question: "Is the player known for death-over bowling or powerplay bowling?", options: ["Death overs","Powerplay","Middle overs","Doesn't bowl"] },
+  { id: 10, question: "Is the player left- or right-handed?", options: ["Left-handed batter","Right-handed batter","Left-handed bowler","Right-handed bowler"] },
+  { id: 11, question: "Is the player regarded as a top-tier fielder?", options: ["Excellent","Good","Average","Not notable"] },
+  { id: 12, question: "Is the player currently active?", options: ["Active internationally","Active domestically/IPL","Recently retired","Long retired"] },
 ];
 
 export default {

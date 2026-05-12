@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import heroImage from '../assets/hero-hologram.png';
+import PredictionGame from './PredictionGame';
 
 const Hero = () => {
+  const [showPredictionGame, setShowPredictionGame] = useState(false);
+
   return (
     <section className="hero" id="home">
       <div className="container hero-content">
@@ -21,9 +24,10 @@ const Hero = () => {
             engineered for the next generation of cricket fans.
           </p>
           <div className="hero-actions">
-            <button className="btn btn-primary btn-lg">Join The Game</button>
+            <button className="btn btn-primary btn-lg" onClick={() => setShowPredictionGame(true)}>Join The Game</button>
             <button className="btn btn-outline btn-lg">Explore Predictions</button>
           </div>
+          {showPredictionGame && <PredictionGame onClose={() => setShowPredictionGame(false)} />}
         </motion.div>
 
         <div className="hero-visual">

@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Cpu } from 'lucide-react';
+import PredictionGame from './PredictionGame';
 
 const Navbar = () => {
+  const [showPredictionGame, setShowPredictionGame] = useState(false);
+
   return (
+    <>
     <nav className="navbar glass">
       <div className="container nav-content">
         <div className="logo">
@@ -19,9 +23,11 @@ const Navbar = () => {
           <li><a href="#community">Community</a></li>
         </ul>
         
-        <button className="btn btn-primary">Join The Game</button>
+        <button className="btn btn-primary" onClick={() => setShowPredictionGame(true)}>Join The Game</button>
       </div>
     </nav>
+    {showPredictionGame && <PredictionGame onClose={() => setShowPredictionGame(false)} />}
+    </>
   );
 };
 

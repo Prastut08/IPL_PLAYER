@@ -36,7 +36,6 @@ export default function CricketMind3D(){
             <li><a href="#contact">Contact</a></li>
           </ul>
           <div className="nav-ctas">
-            <button className="btn btn-secondary">Sign In</button>
             <button className="btn btn-primary">Get Started</button>
           </div>
         </div>

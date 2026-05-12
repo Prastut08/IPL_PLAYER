@@ -5,6 +5,7 @@ import { Canvas } from '@react-three/fiber';
 import HolographicSphere from './HolographicSphere';
 import MagneticCursor from './MagneticCursor';
 import Leaderboard from './Leaderboard';
+import PredictionGame from './PredictionGame';
 import '../styles/cricketmind-ai-3d.css';
 
 // 3D Hero Scene
@@ -26,7 +27,7 @@ const HeroScene = () => (
 );
 
 // Navbar Component
-const Navbar = () => {
+const Navbar = ({ openAkinator }) => {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -54,12 +55,10 @@ const Navbar = () => {
           <li><a href="#predictions" className="nav-link">Predictions</a></li>
           <li><a href="#leaderboard" className="nav-link">Leaderboard</a></li>
           <li><a href="#community" className="nav-link">Community</a></li>
-          <li><a href="#akinator" className="nav-link">Akinator</a></li>
         </ul>
 
         <div className="nav-buttons">
-          <button className="btn btn-outline">Sign In</button>
-          <button className="btn btn-primary">Join The Game</button>
+          <button className="btn btn-primary" onClick={openAkinator}>Join The Game</button>
         </div>
       </div>
     </motion.nav>
@@ -67,7 +66,7 @@ const Navbar = () => {
 };
 
 // Hero Section
-const HeroSection = () => {
+const HeroSection = ({ openAkinator }) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
 
@@ -129,6 +128,7 @@ const HeroSection = () => {
               className="btn btn-primary btn-large cta-neon"
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.98 }}
+              onClick={openAkinator}
             >
               ⚡ Join The Game
             </motion.button>
@@ -700,19 +700,29 @@ const Footer = () => {
 
 // Main Component
 export default function CricketMindAI3D() {
+  const [showAkinator, setShowAkinator] = useState(false);
+
   return (
     <div className="cricketmind-ai-container">
-      <Navbar />
-      <HeroSection />
+      <Navbar openAkinator={() => setShowAkinator(true)} />
+      <HeroSection openAkinator={() => setShowAkinator(true)} />
       <FeaturesSection />
       <PredictionsDashboard />
-      <AkintorSection />
       <GamificationSection />
       <LeaderboardSection />
       <CommunitySection />
       <CTASection />
       <Footer />
       <MagneticCursor />
+
+      {showAkinator && (
+        <div className="modal-overlay">
+          <div className="modal-body">
+            <button className="modal-close" onClick={() => setShowAkinator(false)}>✕</button>
+            <PredictionGame onClose={() => setShowAkinator(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

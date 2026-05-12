@@ -42,7 +42,6 @@ const CricketMindPremium = () => {
           </ul>
 
           <div className="navbar-ctas">
-            <button className="btn-secondary">Sign In</button>
             <button className="btn-primary">Get Started</button>
           </div>
         </div>

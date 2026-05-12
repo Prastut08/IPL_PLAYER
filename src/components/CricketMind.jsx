@@ -9,6 +9,7 @@ import ConfidenceTimeline from './ConfidenceTimeline';
 import FinalPredictionReveal from './FinalPredictionReveal';
 import ReasoningBreakdown from './ReasoningBreakdown';
 import PredictionFeedback from './PredictionFeedback';
+import PredictionGame from './PredictionGame';
 
 // Sample data
 const IPL_PLAYERS = [
@@ -48,6 +49,7 @@ const TIMELINE_DATA = [
 
 const CricketMind = () => {
   const [gameState, setGameState] = useState('home'); // 'home' | 'game' | 'prediction' | 'feedback'
+  const [showPredictionGame, setShowPredictionGame] = useState(false);
   const [confidence, setConfidence] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showPrediction, setShowPrediction] = useState(false);
@@ -63,6 +65,7 @@ const CricketMind = () => {
     setAnswers([]);
     setShowPrediction(false);
     setPredictionReady(false);
+    setShowPredictionGame(true);
   };
 
   // Simulate confidence building
@@ -141,6 +144,10 @@ const CricketMind = () => {
               <span>Start Playing</span>
               <span className="button-shine"></span>
             </button>
+
+            {showPredictionGame && (
+              <PredictionGame onClose={() => setShowPredictionGame(false)} />
+            )}
 
             <div className="hero-stats">
               <div className="stat-item">
