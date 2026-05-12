@@ -5,6 +5,7 @@ import "./AuthExample.css";
 
 const AuthExample = () => {
   const { user, profile, loading } = useAuth();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
@@ -19,9 +20,14 @@ const AuthExample = () => {
       return;
     }
 
+    if (isSignUp && !name) {
+      setAuthError("Name is required for signup");
+      return;
+    }
+
     let result;
     if (isSignUp) {
-      result = await registerUser(email, password);
+      result = await registerUser(email, password, name);
     } else {
       result = await loginUser(email, password);
     }
@@ -31,6 +37,7 @@ const AuthExample = () => {
     } else {
       setEmail("");
       setPassword("");
+      setName("");
     }
   };
 
@@ -52,6 +59,10 @@ const AuthExample = () => {
           <h2>Welcome!</h2>
           <div className="profile-info">
             <div className="profile-item">
+              <span className="profile-label">Name:</span>
+              <span className="profile-value">{profile?.name || user.email}</span>
+            </div>
+            <div className="profile-item">
               <span className="profile-label">Email:</span>
               <span className="profile-value">{user.email}</span>
             </div>
@@ -61,10 +72,6 @@ const AuthExample = () => {
             </div>
             {profile && (
               <>
-                <div className="profile-item">
-                  <span className="profile-label">Name:</span>
-                  <span className="profile-value">{profile.name}</span>
-                </div>
                 <div className="profile-item">
                   <span className="profile-label">XP Points:</span>
                   <span className="profile-value xp">{profile.xp || 0}</span>
@@ -94,6 +101,15 @@ const AuthExample = () => {
         <h2>{isSignUp ? "Sign Up" : "Login"}</h2>
         {authError && <div className="error-message">{authError}</div>}
         <form onSubmit={handleAuthentication}>
+          {isSignUp && (
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required={isSignUp}
+            />
+          )}
           <input
             type="email"
             placeholder="Email"
@@ -119,6 +135,9 @@ const AuthExample = () => {
             onClick={() => {
               setIsSignUp(!isSignUp);
               setAuthError(null);
+              setName("");
+              setEmail("");
+              setPassword("");
             }}
             className="toggle-btn"
           >

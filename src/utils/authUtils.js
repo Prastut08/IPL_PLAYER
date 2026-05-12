@@ -17,7 +17,7 @@ setPersistence(auth, browserLocalPersistence).catch((err) => {
 /**
  * Register a new user with email and password
  */
-export const registerUser = async (email, password) => {
+export const registerUser = async (email, password, name = "") => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -25,7 +25,7 @@ export const registerUser = async (email, password) => {
     // Create user profile in Firestore
     const profileResult = await createUserProfile(user.uid, {
       email: user.email,
-      name: email.split("@")[0], // Use email prefix as default name
+      name: name || email.split("@")[0], // Use provided name or email prefix as default
       uid: user.uid,
       createdAt: new Date().toISOString(),
       xp: 0,
