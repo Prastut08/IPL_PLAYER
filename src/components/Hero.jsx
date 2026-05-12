@@ -7,6 +7,81 @@ const Hero = () => {
   const [showPredictionGame, setShowPredictionGame] = useState(false);
 
   return (
+    <section className="hero game-hero" id="home">
+      <div className="hero-arena">
+        <div className="arena-top">
+          <div className="scoreboard">
+            <div className="score team-ai">
+              <div className="label">AI</div>
+              <div className="value">94%</div>
+            </div>
+            <div className="versus">VS</div>
+            <div className="score team-player">
+              <div className="label">YOU</div>
+              <div className="value">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="container hero-content">
+          <motion.div className="hero-panel"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="hero-left">
+              <div className="hero-badge neon">CRICKETMIND • LIVE</div>
+              <h1 className="hero-title game-title">Predict & Play —<span className="accent"> Beat The AI</span></h1>
+
+              <p className="hero-subtitle game-sub">Answer 12 quick MCQs — our model uses evidence-weighted reasoning to guess your player. Fast, fun, competitive.</p>
+
+              <div className="hero-ctas">
+                <button className="btn start-btn" onClick={() => setShowPredictionGame(true)}>
+                  <span className="ping" />
+                  <span className="label">JOIN THE GAME</span>
+                  <small className="sub">12 Questions • 30s avg</small>
+                </button>
+
+                <button className="btn ghost-btn">Explore Predictions</button>
+              </div>
+
+              <div className="hero-features">
+                <div className="f">🎯 High accuracy</div>
+                <div className="f">⚡ Instant results</div>
+                <div className="f">🏆 Earn XP</div>
+              </div>
+            </div>
+
+            <div className="hero-right">
+              <div className="hologram-wrap">
+                <motion.img src={heroImage} alt="hologram" className="holo" animate={{ rotate: [0, 6, 0] }} transition={{ duration: 6, repeat: Infinity }} />
+                <div className="grid-overlay" />
+                <div className="pulse-ring" />
+              </div>
+            </div>
+
+            {showPredictionGame && <PredictionGame onClose={() => setShowPredictionGame(false)} />}
+          </motion.div>
+        </div>
+
+        <div className="arena-bottom">
+          <div className="ticker">Live: IPL predictions • Top predictor: draunzerkai1119</div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default Hero;
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import heroImage from '../assets/hero-hologram.png';
+import PredictionGame from './PredictionGame';
+
+const Hero = () => {
+  const [showPredictionGame, setShowPredictionGame] = useState(false);
+
+  return (
     <section className="hero" id="home">
       <div className="hero-background">
         <div className="hero-glow top-left" />
