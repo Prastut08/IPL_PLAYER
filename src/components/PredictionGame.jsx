@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { generateQuestions, predictPlayer } from "../utils/groqAPI";
-import { updateUserStats } from "../utils/firebaseUserUtils";
+import { updateUserStats, addPredictionRecord, getUserRank } from "../utils/firebaseUserUtils";
 import { useAuth } from "../utils/useAuth";
 import "./PredictionGame.css";
 
@@ -11,6 +11,7 @@ const PredictionGame = ({ onClose }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [prediction, setPrediction] = useState(null);
+  const [userRank, setUserRank] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -60,10 +61,23 @@ const PredictionGame = ({ onClose }) => {
     if (result.success) {
       setPrediction(result.prediction);
       setStage("result");
-      
-      // Update user stats in Firestore
+
+      // Update user stats and add prediction record in Firestore
       if (user) {
-        await updateUserStats(user.uid, 10, true); // Award 10 XP
+        try {
+          const stats = await updateUserStats(user.uid, 10, true); // Award 10 XP
+          await addPredictionRecord(user.uid, {
+            prediction: result.prediction.playerName,
+            confidence: result.prediction.confidence,
+            xp: 10,
+            answers,
+          });
+
+          const rankRes = await getUserRank(user.uid);
+          if (rankRes.success) setUserRank(rankRes.rank);
+        } catch (e) {
+          console.warn('Error saving leaderboard data:', e);
+        }
       }
     } else {
       setError("Failed to predict player: " + result.error);
@@ -206,7 +220,22 @@ const PredictionGame = ({ onClose }) => {
               </button>
             </div>
 
-            <p className="xp-reward">🎉 +10 XP awarded!</p>
+            {user ? (
+              <div className="leaderboard-note">
+                <p className="xp-reward">🎉 +10 XP awarded and saved to your profile!</p>
+                {userRank ? (
+                  <p className="rank">Your current rank: <strong>#{userRank}</strong></p>
+                ) : (
+                  <p className="rank">Updating your leaderboard position...</p>
+                )}
+                <button onClick={() => (window.location.href = '#leaderboard')} className="view-leaderboard-btn">View Leaderboard</button>
+              </div>
+            ) : (
+              <div className="leaderboard-note">
+                <p className="xp-reward">🎉 +10 XP awarded locally!</p>
+                <p className="rank">Sign in to save XP and appear on the leaderboard.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
