@@ -4,7 +4,7 @@ import { useAuth } from "../utils/useAuth";
 import "./AuthExample.css";
 
 const AuthExample = () => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
@@ -48,10 +48,38 @@ const AuthExample = () => {
   if (user) {
     return (
       <div className="auth-container">
-        <div className="auth-card">
+        <div className="auth-card profile-card">
           <h2>Welcome!</h2>
-          <p>Email: {user.email}</p>
-          <p>UID: {user.uid}</p>
+          <div className="profile-info">
+            <div className="profile-item">
+              <span className="profile-label">Email:</span>
+              <span className="profile-value">{user.email}</span>
+            </div>
+            <div className="profile-item">
+              <span className="profile-label">UID:</span>
+              <span className="profile-value uid">{user.uid}</span>
+            </div>
+            {profile && (
+              <>
+                <div className="profile-item">
+                  <span className="profile-label">Name:</span>
+                  <span className="profile-value">{profile.name}</span>
+                </div>
+                <div className="profile-item">
+                  <span className="profile-label">XP Points:</span>
+                  <span className="profile-value xp">{profile.xp || 0}</span>
+                </div>
+                <div className="profile-item">
+                  <span className="profile-label">Accuracy:</span>
+                  <span className="profile-value">{profile.accuracy || 0}%</span>
+                </div>
+                <div className="profile-item">
+                  <span className="profile-label">Predictions:</span>
+                  <span className="profile-value">{profile.predictions || 0}</span>
+                </div>
+              </>
+            )}
+          </div>
           <button onClick={handleLogout} className="logout-btn">
             Logout
           </button>

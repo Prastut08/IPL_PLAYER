@@ -7,6 +7,7 @@ import {
   browserLocalPersistence,
 } from "firebase/auth";
 import { auth } from "../../firebase";
+import { createUserProfile } from "./firebaseUserUtils";
 
 // Enable session persistence
 setPersistence(auth, browserLocalPersistence).catch((err) => {
@@ -19,8 +20,26 @@ setPersistence(auth, browserLocalPersistence).catch((err) => {
 export const registerUser = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    console.log("User registered:", userCredential.user);
-    return { success: true, user: userCredential.user };
+    const user = userCredential.user;
+    
+    // Create user profile in Firestore
+    const profileResult = await createUserProfile(user.uid, {
+      email: user.email,
+      name: email.split("@")[0], // Use email prefix as default name
+      uid: user.uid,
+      createdAt: new Date().toISOString(),
+      xp: 0,
+      accuracy: 0,
+      predictions: 0,
+      correct: 0,
+    });
+
+    if (!profileResult.success) {
+      console.warn("Profile creation warning:", profileResult.error);
+    }
+
+    console.log("User registered and profile created:", user.uid);
+    return { success: true, user };
   } catch (error) {
     console.error("Registration error:", error.message);
     return { success: false, error: error.message };

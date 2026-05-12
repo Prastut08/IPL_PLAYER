@@ -17,6 +17,10 @@
   max-width: 400px;
 }
 
+.auth-card.profile-card {
+  max-width: 500px;
+}
+
 .auth-card h2 {
   margin: 0 0 30px 0;
   text-align: center;
@@ -89,4 +93,49 @@
   margin-bottom: 20px;
   border-left: 4px solid #c33;
   font-size: 14px;
+}
+
+/* Profile Info Styles */
+.profile-info {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.profile-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.profile-item:last-child {
+  border-bottom: none;
+}
+
+.profile-label {
+  color: #666;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.profile-value {
+  color: #333;
+  font-size: 14px;
+  text-align: right;
+  word-break: break-all;
+}
+
+.profile-value.uid {
+  font-size: 12px;
+  font-family: monospace;
+  color: #667eea;
+}
+
+.profile-value.xp {
+  font-weight: 600;
+  color: #ffd700;
+  font-size: 16px;
 }
