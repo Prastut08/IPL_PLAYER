@@ -1,0 +1,105 @@
+import React, { useState } from "react";
+import { registerUser, loginUser, logoutUser } from "../../utils/authUtils";
+import { useAuth } from "../../utils/useAuth";
+import "./AuthExample.css";
+
+const AuthExample = () => {
+  const { user, loading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [authError, setAuthError] = useState(null);
+
+  const handleAuthentication = async (e) => {
+    e.preventDefault();
+    setAuthError(null);
+
+    if (!email || !password) {
+      setAuthError("Email and password are required");
+      return;
+    }
+
+    let result;
+    if (isSignUp) {
+      result = await registerUser(email, password);
+    } else {
+      result = await loginUser(email, password);
+    }
+
+    if (!result.success) {
+      setAuthError(result.error);
+    } else {
+      setEmail("");
+      setPassword("");
+    }
+  };
+
+  const handleLogout = async () => {
+    const result = await logoutUser();
+    if (!result.success) {
+      setAuthError(result.error);
+    }
+  };
+
+  if (loading) {
+    return <div className="auth-container">Loading...</div>;
+  }
+
+  if (user) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <h2>Welcome!</h2>
+          <p>Email: {user.email}</p>
+          <p>UID: {user.uid}</p>
+          <button onClick={handleLogout} className="logout-btn">
+            Logout
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>{isSignUp ? "Sign Up" : "Login"}</h2>
+        {authError && <div className="error-message">{authError}</div>}
+        <form onSubmit={handleAuthentication}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button type="submit" className="auth-btn">
+            {isSignUp ? "Sign Up" : "Login"}
+          </button>
+        </form>
+        <p>
+          {isSignUp ? "Already have an account? " : "Don't have an account? "}
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setAuthError(null);
+            }}
+            className="toggle-btn"
+          >
+            {isSignUp ? "Login" : "Sign Up"}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default AuthExample;
