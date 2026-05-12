@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { registerUser, loginUser, logoutUser } from "../../utils/authUtils";
-import { useAuth } from "../../utils/useAuth";
+import { registerUser, loginUser, logoutUser } from "../utils/authUtils";
+import { useAuth } from "../utils/useAuth";
 import "./AuthExample.css";
 
 const AuthExample = () => {
