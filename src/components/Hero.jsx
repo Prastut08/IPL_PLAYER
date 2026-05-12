@@ -8,55 +8,80 @@ const Hero = () => {
 
   return (
     <section className="hero" id="home">
+      <div className="hero-background">
+        <div className="hero-glow top-left" />
+        <div className="hero-glow bottom-right" />
+      </div>
+
       <div className="container hero-content">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           className="hero-text"
         >
+          <div className="hero-badge">⚡ AI-POWERED • REAL-TIME</div>
+
           <h1 className="hero-title">
-            Predict The Winners. <br />
+            Predict The Winners.
+            <br />
             <span className="text-gradient-blue">Own The Game.</span>
           </h1>
+
           <p className="hero-subtitle">
-            AI-powered IPL match predictions, fantasy insights, and real-time analytics 
-            engineered for the next generation of cricket fans.
+            Bite-sized, evidence-driven MCQs that help our AI identify players with high accuracy. Fast, fun, and built for cricket fans.
           </p>
-          <div className="hero-actions">
-            <button className="btn btn-primary btn-lg" onClick={() => setShowPredictionGame(true)}>Join The Game</button>
+
+          <div className="hero-stats">
+            <div className="stat">
+              <div className="stat-value">94.2%</div>
+              <div className="stat-label">Avg Accuracy</div>
+            </div>
+            <div className="stat">
+              <div className="stat-value">120K+</div>
+              <div className="stat-label">Predictions / day</div>
+            </div>
+            <div className="stat">
+              <div className="stat-value">24ms</div>
+              <div className="stat-label">Avg Latency</div>
+            </div>
+          </div>
+
+          <div className="hero-actions hero-ctas">
+            <button className="btn btn-primary btn-lg glow" onClick={() => setShowPredictionGame(true)}>Join The Game</button>
             <button className="btn btn-outline btn-lg">Explore Predictions</button>
           </div>
+
           {showPredictionGame && <PredictionGame onClose={() => setShowPredictionGame(false)} />}
         </motion.div>
 
         <div className="hero-visual">
           <div className="sphere-container">
-            <motion.div 
+            <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
               className="energy-ring ring-1"
             />
-            <motion.div 
+            <motion.div
               animate={{ rotate: -360 }}
-              transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
               className="energy-ring ring-2"
             />
-            <motion.img 
-              src={heroImage} 
-              alt="Holographic Cricket AI" 
+
+            <motion.img
+              src={heroImage}
+              alt="Holographic Cricket AI"
               className="hero-sphere animate-float"
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 1 }}
             />
-            
-            {/* Floating UI Elements */}
-            <motion.div 
+
+            <motion.div
               className="floating-data glass"
-              animate={{ y: [0, -10, 0] }}
+              animate={{ y: [0, -8, 0] }}
               transition={{ duration: 3, repeat: Infinity }}
-              style={{ top: '10%', right: '-10%' }}
+              style={{ top: '8%', right: '-6%' }}
             >
               <div className="data-item">
                 <span className="data-label">Win Prob</span>
@@ -64,11 +89,11 @@ const Hero = () => {
               </div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="floating-data glass"
-              animate={{ y: [0, 10, 0] }}
+              animate={{ y: [0, 8, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
-              style={{ bottom: '20%', left: '-5%' }}
+              style={{ bottom: '18%', left: '-6%' }}
             >
               <div className="data-item">
                 <span className="data-label">AI Confidence</span>
