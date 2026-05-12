@@ -11,6 +11,8 @@ const GROQ_USE_API = (import.meta.env.VITE_GROQ_USE_API || "true").toLowerCase()
 // Gemini / Google Generative API support (uses API key via VITE_GEMINI_API_KEY)
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 const GEMINI_URL = (key) => `https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generate?key=${key}`;
+const GEMINI_RETRIES = 2;
+const GEMINI_RETRY_DELAY = 700; // ms
 
 /**
  * Generate 12 questions for player prediction
@@ -18,31 +20,32 @@ const GEMINI_URL = (key) => `https://generativelanguage.googleapis.com/v1beta2/m
 export const generateQuestions = async () => {
   // Prefer Gemini if API key present
   if (GEMINI_API_KEY) {
-    try {
-      const prompt = `Generate between 10 and 12 concise multiple-choice questions (MCQs) to predict which IPL/cricket player someone is thinking of. For each question return an object with keys: id (numeric), question (short text), options (array of exactly 4 option strings). Return a JSON array only, for example: [{"id":1,"question":"...","options":["A","B","C","D"]}, ...]. Do not return any extra explanation or text.`;
+    // Try a small number of times with conservative sampling for accuracy
+    for (let attempt = 0; attempt <= GEMINI_RETRIES; attempt++) {
+      try {
+        const prompt = `You are an assistant that creates highly discriminative multiple-choice questions to identify a cricket player. Produce between 10 and 12 concise MCQs (4 options each) that are maximally distinguishing across players (role, batting style, position, bowling type, era, captaincy, signature skills, notable achievements). Ensure options are mutually exclusive and balanced. Return a JSON array ONLY using this schema: [{"id":1,"question":"...","options":["A","B","C","D"]}, ...]. Do NOT include any explanatory text, markdown, or code fences. Keep questions short (<= 80 chars) and options short (<= 30 chars).`;
 
-      const res = await fetch(GEMINI_URL(GEMINI_API_KEY), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: { text: prompt },
-          temperature: 0.7,
-          maxOutputTokens: 1200,
-        }),
-      });
+        const res = await fetch(GEMINI_URL(GEMINI_API_KEY), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: { text: prompt }, temperature: 0.2, maxOutputTokens: 1200 }),
+        });
 
-      if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
-      const data = await res.json();
-      const content = data.candidates?.[0]?.content || data.output?.[0]?.content || '';
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) throw new Error('Invalid Gemini response format');
-      const questions = JSON.parse(jsonMatch[0]);
-      return { success: true, questions };
-    } catch (err) {
-      console.error('Gemini generateQuestions error:', err);
-      return { success: false, error: err.message, questions: getFallbackQuestions() };
+        if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
+        const data = await res.json();
+        const content = data.candidates?.[0]?.content || data.output?.[0]?.content || '';
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) throw new Error('Invalid Gemini response format');
+        const questions = JSON.parse(jsonMatch[0]);
+        return { success: true, questions };
+      } catch (err) {
+        console.warn(`Gemini generateQuestions attempt ${attempt + 1} failed:`, err.message || err);
+        if (attempt < GEMINI_RETRIES) await new Promise((r) => setTimeout(r, GEMINI_RETRY_DELAY));
+        else {
+          console.error('Gemini generateQuestions error:', err);
+          return { success: false, error: err.message, questions: getFallbackQuestions() };
+        }
+      }
     }
   }
 
@@ -95,30 +98,34 @@ export const generateQuestions = async () => {
 export const predictPlayer = async (answers) => {
   // If Gemini key present, use Google's Generative API
   if (GEMINI_API_KEY) {
-    try {
-      const answersText = answers.map((a, i) => `Q${i + 1}: ${a.question}\nA: ${a.answer}`).join('\n\n');
-      const prompt = `Based on these answers about a cricket player, predict which player they are thinking of.\n\nAnswers:\n${answersText}\n\nReturn a JSON object with playerName, confidence (0-100), reasoning, alternates (array of 2). Return JSON only.`;
-
-      const res = await fetch(GEMINI_URL(GEMINI_API_KEY), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: { text: prompt }, temperature: 0.7, maxOutputTokens: 500 }),
-      });
-
-      if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
-      const data = await res.json();
-      const content = data.candidates?.[0]?.content || data.output?.[0]?.content || '';
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('Invalid Gemini prediction format');
-      const prediction = JSON.parse(jsonMatch[0]);
-      return { success: true, prediction };
-    } catch (err) {
-      console.error('Gemini predictPlayer error:', err);
-      // Fallback to local predictor when Gemini is unavailable
+    // Retry loop for increased robustness; ask for evidence-backed prediction
+    for (let attempt = 0; attempt <= GEMINI_RETRIES; attempt++) {
       try {
-        return localPredict(answers);
-      } catch (e) {
-        return { success: false, error: err.message };
+        const answersText = answers.map((a, i) => `Q${i + 1}: ${a.question}\nA: ${a.answer}`).join('\n\n');
+        const prompt = `You are an expert cricket analyst. Given the following concise answers, predict the single most likely cricket player the respondent is thinking of. Use the answers as evidence and map each piece of evidence back to the question number. Return a single JSON object with these keys:\n- playerName (string)\n- confidence (integer 0-100)\n- reasoning (short paragraph with bullet-like evidence mapping e.g. 'Q3 -> Power-hitter')\n- alternates (array of up to 2 player names, ordered)\nReturn JSON ONLY. Do not include explanation, commentary, or markdown.\n\nAnswers:\n${answersText}`;
+
+        const res = await fetch(GEMINI_URL(GEMINI_API_KEY), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: { text: prompt }, temperature: 0.2, maxOutputTokens: 700 }),
+        });
+
+        if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
+        const data = await res.json();
+        const content = data.candidates?.[0]?.content || data.output?.[0]?.content || '';
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('Invalid Gemini prediction format');
+        const prediction = JSON.parse(jsonMatch[0]);
+        // Basic validation
+        if (!prediction.playerName || typeof prediction.confidence !== 'number') throw new Error('Incomplete prediction fields');
+        return { success: true, prediction };
+      } catch (err) {
+        console.warn(`Gemini predictPlayer attempt ${attempt + 1} failed:`, err.message || err);
+        if (attempt < GEMINI_RETRIES) await new Promise((r) => setTimeout(r, GEMINI_RETRY_DELAY));
+        else {
+          console.error('Gemini predictPlayer error:', err);
+          try { return localPredict(answers); } catch (e) { return { success: false, error: err.message }; }
+        }
       }
     }
   }
@@ -142,11 +149,11 @@ export const predictPlayer = async (answers) => {
         messages: [
           {
             role: "user",
-            content: `Based on these answers about a cricket player, predict which player they are thinking of.\n\nAnswers:\n${answersText}\n\nReturn a JSON object with playerName, confidence (0-100), reasoning, alternates (array of 2). Return JSON only.`,
+            content: `You are an expert cricket analyst. Given these answers, return a single JSON object with playerName, confidence (0-100), reasoning (evidence mapped to question numbers), and alternates (array up to 2). Return JSON only.\n\nAnswers:\n${answersText}`,
           },
         ],
-        max_tokens: 500,
-        temperature: 0.7,
+        max_tokens: 700,
+        temperature: 0.2,
       }),
     });
 
@@ -161,6 +168,7 @@ export const predictPlayer = async (answers) => {
       throw new Error("Invalid prediction format");
     }
     const prediction = JSON.parse(jsonMatch[0]);
+    if (!prediction.playerName || typeof prediction.confidence !== 'number') throw new Error('Incomplete prediction fields');
     return { success: true, prediction };
   } catch (error) {
     console.error("Error predicting player:", error);
