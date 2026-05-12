@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import heroImage from '../assets/hero-hologram.png';
 import PredictionGame from './PredictionGame';
 
-const Hero = () => {
+const Hero = () => { 
   const [showPredictionGame, setShowPredictionGame] = useState(false);
 
   return (
@@ -23,22 +23,22 @@ const Hero = () => {
           </div>
         </div>
 
-        <div className="container hero-content">
+            Predict the player. <span className="accent">Win XP.</span>
           <motion.div className="hero-panel"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
+            Fast 12-question MCQs, evidence-based AI reasoning, and leaderboard rewards — designed for cricket fans who love competition.
           >
             <div className="hero-left">
               <div className="hero-badge neon">CRICKETMIND • LIVE</div>
-              <h1 className="hero-title game-title">Predict & Play —<span className="accent"> Beat The AI</span></h1>
+            <button className="btn primary" onClick={() => setShowPredictionGame(true)}>Join The Game • 12 Qs</button>
 
               <p className="hero-subtitle game-sub">Answer 12 quick MCQs — our model uses evidence-weighted reasoning to guess your player. Fast, fun, competitive.</p>
 
               <div className="hero-ctas">
-                <button className="btn start-btn" onClick={() => setShowPredictionGame(true)}>
-                  <span className="ping" />
-                  <span className="label">JOIN THE GAME</span>
+            <div>🎯 Evidence-weighted MCQs</div>
+            <div>🏆 Earn XP & climb leaderboard</div>
+            <div>⚡ Instant AI predictions</div>
                   <small className="sub">12 Questions • 30s avg</small>
                 </button>
 

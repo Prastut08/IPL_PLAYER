@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import { getTopLeaderboard } from '../utils/firebaseUserUtils';
+import { db } from '../../firebase';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 const Leaderboard = () => {
   const [users, setUsers] = useState([]);
@@ -9,45 +11,39 @@ const Leaderboard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchLeaderboard = async () => {
-      setLoading(true);
-      const result = await getTopLeaderboard(10);
-      if (result.success) {
-        // Calculate badge based on XP
-        const usersWithBadges = result.data.map((user) => {
-          let badge = "Beginner";
-          if (user.xp >= 50000) badge = "Grandmaster";
-          else if (user.xp >= 40000) badge = "Pro";
-          else if (user.xp >= 30000) badge = "Expert";
-          else if (user.xp >= 20000) badge = "Advanced";
-          else if (user.xp >= 10000) badge = "Intermediate";
-          
-          return {
-            ...user,
-            badge,
-            accuracy: user.accuracy ? `${user.accuracy}%` : "N/A",
-            name: user.name || user.id.substring(0, 8),
-          };
-        });
-        setUsers(usersWithBadges);
-        setError(null);
-      } else {
-        setError(result.error);
-        // Show default users if database is empty
-        setUsers([
-          { rank: 1, name: "CryptoCricket", xp: 45200, accuracy: "94%", badge: "Grandmaster", id: "1" },
-          { rank: 2, name: "AI_Analyst", xp: 42100, accuracy: "91%", badge: "Pro", id: "2" },
-          { rank: 3, name: "NeuralKnight", xp: 39800, accuracy: "89%", badge: "Expert", id: "3" }
-        ]);
-      }
+    setLoading(true);
+
+    // Use real-time listener so leaderboard updates immediately when XP changes
+    const q = query(collection(db, 'users'), orderBy('xp', 'desc'), limit(10));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map((doc, index) => {
+        const data = doc.data();
+        let badge = 'Beginner';
+        if (data.xp >= 50000) badge = 'Grandmaster';
+        else if (data.xp >= 40000) badge = 'Pro';
+        else if (data.xp >= 30000) badge = 'Expert';
+        else if (data.xp >= 20000) badge = 'Advanced';
+        else if (data.xp >= 10000) badge = 'Intermediate';
+
+        return {
+          id: doc.id,
+          rank: index + 1,
+          name: data.name || doc.id.substring(0, 8),
+          xp: data.xp || 0,
+          accuracy: data.accuracy ? `${data.accuracy}%` : 'N/A',
+          badge,
+        };
+      });
+      setUsers(list);
       setLoading(false);
-    };
+      setError(null);
+    }, (err) => {
+      console.error('Leaderboard snapshot error:', err);
+      setError(err.message);
+      setLoading(false);
+    });
 
-    fetchLeaderboard();
-
-    // Refresh leaderboard every 30 seconds
-    const interval = setInterval(fetchLeaderboard, 30000);
-    return () => clearInterval(interval);
+    return () => unsubscribe();
   }, []);
 
   return (
