@@ -13,50 +13,47 @@ export const useAuth = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-      // Load profile from Firestore
-      loadProfile(currentUser.uid);
-    } else {
-      setLoading(false);
-    }
+    let isMounted = true;
+
+    // Load profile from Firestore
+    const loadProfile = async (userId) => {
+      try {
+        const result = await getUserProfile(userId);
+        if (isMounted) {
+          if (result.success) {
+            setProfile(result.data);
+          } else {
+            console.warn("Profile not found:", result.error);
+            setProfile(null);
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.error("Error loading profile:", err);
+          setError(err.message);
+        }
+      }
+    };
 
     // Subscribe to auth changes
     const unsubscribe = subscribeToAuthChanges(async (authUser) => {
       if (authUser) {
         setUser(authUser);
-        // Load profile from Firestore when user logs in
         await loadProfile(authUser.uid);
         setError(null);
       } else {
         setUser(null);
         setProfile(null);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
     // Cleanup subscription on unmount
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
-
-  const loadProfile = async (userId) => {
-    try {
-      const result = await getUserProfile(userId);
-      if (result.success) {
-        setProfile(result.data);
-      } else {
-        console.warn("Profile not found:", result.error);
-        setProfile(null);
-      }
-    } catch (err) {
-      console.error("Error loading profile:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return { user, profile, loading, error };
 };
