@@ -6,6 +6,10 @@ import AuthExample from './components/AuthExample';
 function App() {
   const { user, loading } = useAuth();
 
+  // Allow forcing the auth page for debugging by adding `?auth=1` or visiting `/auth`
+  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const forceAuth = (params && params.get('auth') === '1') || (typeof window !== 'undefined' && window.location.pathname === '/auth');
+
   if (loading) {
     return (
       <div style={{
@@ -22,8 +26,8 @@ function App() {
     );
   }
 
-  // Show auth page if user is not logged in
-  if (!user) {
+  // Show auth page if user is not logged in, or when forced via query/path
+  if (!user || forceAuth) {
     return <AuthExample />;
   }
 
