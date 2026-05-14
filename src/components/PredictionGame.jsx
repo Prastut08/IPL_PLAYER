@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { generateQuestions, predictPlayer } from "../utils/groqAPI";
 import { updateUserStats, addPredictionRecord, getUserRank } from "../utils/firebaseUserUtils";
 import { useAuth } from "../utils/useAuth";
+import AfterGamePopup from "./AfterGamePopup";
 import "./PredictionGame.css";
 
 const PredictionGame = ({ onClose }) => {
@@ -165,80 +166,14 @@ const PredictionGame = ({ onClose }) => {
 
   if (stage === "result") {
     return (
-      <div className="game-container">
-        <div className="game-card result-card">
-          <div className="game-header">
-            <h2>Prediction Result</h2>
-            <button onClick={onClose} className="close-btn">✕</button>
-          </div>
-
-          <div className="prediction-result">
-            <div className="player-prediction">
-              <h3 className="predicted-player">{prediction?.playerName}</h3>
-              <div className="confidence">
-                <span className="confidence-label">Confidence:</span>
-                <span className="confidence-value">{prediction?.confidence}%</span>
-              </div>
-              <div className="confidence-bar">
-                <div
-                  className="confidence-fill"
-                  style={{
-                    width: `${prediction?.confidence}%`,
-                    backgroundColor:
-                      prediction?.confidence > 80
-                        ? "#00d9ff"
-                        : prediction?.confidence > 60
-                        ? "#ffd700"
-                        : "#ff6b6b",
-                  }}
-                ></div>
-              </div>
-            </div>
-
-            <div className="reasoning">
-              <h4>Why?</h4>
-              <p>{prediction?.reasoning}</p>
-            </div>
-
-            {prediction?.alternates && prediction.alternates.length > 0 && (
-              <div className="alternates">
-                <h4>Other Possibilities:</h4>
-                <ul>
-                  {prediction.alternates.map((player, idx) => (
-                    <li key={idx}>{player}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="game-actions">
-              <button onClick={handleRestart} className="play-again-btn">
-                Play Again
-              </button>
-              <button onClick={onClose} className="close-game-btn">
-                Close Game
-              </button>
-            </div>
-
-            {user ? (
-              <div className="leaderboard-note">
-                <p className="xp-reward">🎉 +10 XP awarded and saved to your profile!</p>
-                {userRank ? (
-                  <p className="rank">Your current rank: <strong>#{userRank}</strong></p>
-                ) : (
-                  <p className="rank">Updating your leaderboard position...</p>
-                )}
-                <button onClick={() => (window.location.href = '#leaderboard')} className="view-leaderboard-btn">View Leaderboard</button>
-              </div>
-            ) : (
-              <div className="leaderboard-note">
-                <p className="xp-reward">🎉 +10 XP awarded locally!</p>
-                <p className="rank">Sign in to save XP and appear on the leaderboard.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <AfterGamePopup
+        prediction={prediction}
+        user={user}
+        userRank={userRank}
+        xpAwarded={10}
+        onPlayAgain={handleRestart}
+        onClose={onClose}
+      />
     );
   }
 };
