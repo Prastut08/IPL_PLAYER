@@ -153,6 +153,62 @@ export const addPredictionRecord = async (userId, predictionData) => {
   }
 };
 
+/**
+ * Badge Tier System
+ */
+export const BADGE_TIERS = {
+  'Beginner': { minXp: 0, maxXp: 9999, color: '#6496c8', bgColor: 'rgba(100, 150, 200, 0.15)' },
+  'Intermediate': { minXp: 10000, maxXp: 19999, color: '#b0b0b0', bgColor: 'rgba(150, 150, 150, 0.15)' },
+  'Advanced': { minXp: 20000, maxXp: 29999, color: '#64c8ff', bgColor: 'rgba(100, 200, 255, 0.15)' },
+  'Expert': { minXp: 30000, maxXp: 39999, color: '#ff6b6b', bgColor: 'rgba(255, 100, 100, 0.15)' },
+  'Pro': { minXp: 40000, maxXp: 49999, color: '#00d9ff', bgColor: 'rgba(0, 217, 255, 0.2)' },
+  'Grandmaster': { minXp: 50000, maxXp: Infinity, color: '#ffd700', bgColor: 'rgba(255, 215, 0, 0.2)' },
+};
+
+/**
+ * Calculate badge based on XP
+ */
+export const calculateBadge = (xp) => {
+  if (xp >= 50000) return 'Grandmaster';
+  if (xp >= 40000) return 'Pro';
+  if (xp >= 30000) return 'Expert';
+  if (xp >= 20000) return 'Advanced';
+  if (xp >= 10000) return 'Intermediate';
+  return 'Beginner';
+};
+
+/**
+ * Get next badge tier info
+ */
+export const getNextBadgeTier = (currentBadge) => {
+  const tiers = ['Beginner', 'Intermediate', 'Advanced', 'Expert', 'Pro', 'Grandmaster'];
+  const currentIndex = tiers.indexOf(currentBadge);
+  
+  if (currentIndex === -1 || currentIndex === tiers.length - 1) {
+    return { name: currentBadge, xp: 50000 };
+  }
+  
+  const nextTier = tiers[currentIndex + 1];
+  const xpThreshold = BADGE_TIERS[nextTier].minXp;
+  return { name: nextTier, xp: xpThreshold };
+};
+
+/**
+ * Get XP progress to next tier
+ */
+export const getXpProgressToNextTier = (xp, currentBadge) => {
+  const next = getNextBadgeTier(currentBadge);
+  if (next.name === currentBadge) {
+    return { current: xp, target: 50000, progress: 100 };
+  }
+  
+  const current = BADGE_TIERS[currentBadge].minXp;
+  const target = next.xp;
+  const progress = Math.min(((xp - current) / (target - current)) * 100, 100);
+  
+  return { current: xp - current, target: target - current, progress };
+};
+
 export default {
   createUserProfile,
   getUserProfile,
@@ -160,4 +216,8 @@ export default {
   getTopLeaderboard,
   getUserRank,
   addPredictionRecord,
+  calculateBadge,
+  getNextBadgeTier,
+  getXpProgressToNextTier,
+  BADGE_TIERS,
 };

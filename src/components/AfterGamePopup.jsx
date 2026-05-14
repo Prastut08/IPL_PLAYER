@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, TrendingUp, Award, Target } from 'lucide-react';
+import { Trophy, TrendingUp, Award, Target, Zap } from 'lucide-react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { getUserRank } from '../utils/firebaseUserUtils';
+import { getUserRank, calculateBadge, getNextBadgeTier } from '../utils/firebaseUserUtils';
 import '../styles/after-game-popup.css';
 
 const AfterGamePopup = ({
@@ -26,12 +26,7 @@ const AfterGamePopup = ({
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const list = snapshot.docs.map((doc, index) => {
           const data = doc.data();
-          let badge = 'Beginner';
-          if (data.xp >= 50000) badge = 'Grandmaster';
-          else if (data.xp >= 40000) badge = 'Pro';
-          else if (data.xp >= 30000) badge = 'Expert';
-          else if (data.xp >= 20000) badge = 'Advanced';
-          else if (data.xp >= 10000) badge = 'Intermediate';
+          const badge = calculateBadge(data.xp || 0);
 
           return {
             id: doc.id,
@@ -160,6 +155,9 @@ const AfterGamePopup = ({
         );
 
       case 'leaderboard':
+        const currentUser = leaderboardUsers.find(u => u.isCurrentUser);
+        const nextBadgeTier = currentUser ? getNextBadgeTier(currentUser.badge) : null;
+
         return (
           <motion.div
             key="leaderboard"
@@ -182,7 +180,60 @@ const AfterGamePopup = ({
                 </div>
               ) : (
                 <>
+                  {/* Personal Stats Card */}
+                  {user && currentUser && (
+                    <motion.div
+                      className="personal-stats-card"
+                      initial={{ y: -20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                    >
+                      <div className="stats-header">
+                        <div className="rank-showcase">
+                          <div className={`rank-circle rank-${currentUser.rank <= 3 ? currentUser.rank : 'default'}`}>
+                            {currentUser.rank === 1 ? (
+                              <Trophy size={32} />
+                            ) : (
+                              <span className="rank-number-large">#{currentUser.rank}</span>
+                            )}
+                          </div>
+                          <div className="rank-info">
+                            <p className="rank-label">Current Rank</p>
+                            <p className="rank-title">{currentUser.name}</p>
+                          </div>
+                        </div>
+                        <div className="badge-showcase">
+                          <span className={`badge-tag-large ${currentUser.badge.toLowerCase()}`}>
+                            {currentUser.badge}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="xp-progress-section">
+                        <div className="xp-header">
+                          <span className="xp-current">XP: <span className="xp-number">{currentUser.xp.toLocaleString()}</span></span>
+                          <span className="xp-target">Target: {nextBadgeTier?.xp.toLocaleString() || 'Max'}</span>
+                        </div>
+                        <div className="xp-progress-bar">
+                          <motion.div
+                            className="xp-progress-fill"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min((currentUser.xp / (nextBadgeTier?.xp || 50000)) * 100, 100)}%` }}
+                            transition={{ delay: 0.3, duration: 0.8 }}
+                          />
+                        </div>
+                        <p className="xp-remaining">
+                          {nextBadgeTier?.xp > currentUser.xp 
+                            ? `${(nextBadgeTier?.xp - currentUser.xp).toLocaleString()} XP until ${nextBadgeTier?.name}`
+                            : 'Reached Maximum Rank!'}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Leaderboard Table */}
                   <div className="leaderboard-table">
+                    <div className="table-title">🏆 Top Players</div>
                     <div className="table-header">
                       <span className="col-rank">Rank</span>
                       <span className="col-name">Player</span>
@@ -191,44 +242,45 @@ const AfterGamePopup = ({
                     </div>
 
                     <div className="table-body">
-                      {leaderboardUsers.map((user, idx) => (
+                      {leaderboardUsers.map((u, idx) => (
                         <motion.div
-                          key={user.id}
-                          className={`table-row ${user.isCurrentUser ? 'current-user' : ''}`}
+                          key={u.id}
+                          className={`table-row ${u.isCurrentUser ? 'current-user' : ''}`}
                           initial={{ x: -20, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
                           transition={{ delay: idx * 0.05 }}
+                          whileHover={{ x: 4 }}
                         >
                           <div className="col-rank">
-                            {user.rank === 1 ? (
+                            {u.rank === 1 ? (
                               <span className="rank-badge rank-1">
                                 <Trophy size={16} />
                               </span>
-                            ) : user.rank === 2 ? (
+                            ) : u.rank === 2 ? (
                               <span className="rank-badge rank-2">2</span>
-                            ) : user.rank === 3 ? (
+                            ) : u.rank === 3 ? (
                               <span className="rank-badge rank-3">3</span>
                             ) : (
-                              <span className="rank-number">#{user.rank}</span>
+                              <span className="rank-number">#{u.rank}</span>
                             )}
                           </div>
                           <div className="col-name">
                             <div className="user-info">
-                              <div className="avatar" />
+                              <div className={`avatar ${u.isCurrentUser ? 'current' : ''}`} />
                               <div>
-                                <p className="name">{user.name}</p>
-                                {user.isCurrentUser && (
+                                <p className="name">{u.name}</p>
+                                {u.isCurrentUser && (
                                   <span className="you-badge">You</span>
                                 )}
                               </div>
                             </div>
                           </div>
                           <div className="col-xp">
-                            <span className="xp-value">{user.xp.toLocaleString()}</span>
+                            <span className="xp-value">{u.xp.toLocaleString()}</span>
                           </div>
                           <div className="col-badge">
-                            <span className={`badge-tag ${user.badge.toLowerCase()}`}>
-                              {user.badge}
+                            <span className={`badge-tag ${u.badge.toLowerCase()}`}>
+                              {u.badge}
                             </span>
                           </div>
                         </motion.div>
@@ -237,13 +289,18 @@ const AfterGamePopup = ({
                   </div>
 
                   {user && userRank && userRank > 10 && (
-                    <div className="user-position-card">
+                    <motion.div
+                      className="user-position-card"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
                       <div className="position-content">
-                        <span className="position-label">Your Rank</span>
+                        <span className="position-label">📍 Your Position</span>
                         <span className="position-value">#{userRank}</span>
-                        <p className="position-text">Keep playing to climb higher!</p>
+                        <p className="position-text">Keep playing to climb to the top 10!</p>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
                 </>
               )}

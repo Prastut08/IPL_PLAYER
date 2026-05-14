@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
-import { getTopLeaderboard } from '../utils/firebaseUserUtils';
+import { getTopLeaderboard, calculateBadge } from '../utils/firebaseUserUtils';
 import { db } from '../../firebase';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
@@ -18,12 +18,7 @@ const Leaderboard = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const list = snapshot.docs.map((doc, index) => {
         const data = doc.data();
-        let badge = 'Beginner';
-        if (data.xp >= 50000) badge = 'Grandmaster';
-        else if (data.xp >= 40000) badge = 'Pro';
-        else if (data.xp >= 30000) badge = 'Expert';
-        else if (data.xp >= 20000) badge = 'Advanced';
-        else if (data.xp >= 10000) badge = 'Intermediate';
+        const badge = calculateBadge(data.xp || 0);
 
         return {
           id: doc.id,
